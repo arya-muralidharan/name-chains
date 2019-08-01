@@ -1,2 +1,3 @@
 # name-chains
-Return all name chains such that the last name of Person A is the first name of Person B (and so on).
+Find all name chains such that every pair of consecutive names is the first and last name of a current or former NBA/ABA player.
+Example: LeBron James Harden.
