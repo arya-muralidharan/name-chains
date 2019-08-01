@@ -184,20 +184,20 @@ saveRDS(final_names, here("data", clean.output))
 
 ```
 
-Most of this next chunk isn't strictly necessary--we could skip to the following chunk and replace every instance of "step_00x" (apart from "step_001," which is necessary) with "final_names" and it would work.
+This next chunk isn't strictly necessary. We could skip to the following chunk and replace every instance of "step_00x" with "final_names" and it would still work.
 
 However, creating tinier and tinier tibbles in this chunk makes the following chunk faster to run, as R only needs to search through a maximum of 1229 rows for name matches as opposed to searching though 4587 rows every time.
 
-```{r data_frames_manual}
+```{r}
 
 # final_names <- readRDS(here("data", clean.output))
 
-# step_001: reasonable starting points - players with last names that are others' first names
+# step_001: find people whose first names match others' last names
 step_001 <- tibble()
 
 for(i in 1:nrow(final_names)){
-  name <- final_names[i,2] %>% as.character()
-  if(name %in% final_names$first){
+  name <- final_names[i,1] %>% as.character()
+  if(name %in% final_names$last){
     step_001 <- bind_rows(step_001, final_names[i,])
   }
 }
@@ -322,7 +322,7 @@ for(i in 1:nrow(final_names)){
   }
 }
 
-# step_014
+# step_014: the final step!
 step_014 <- tibble()
 
 for(i in 1:nrow(final_names)){
@@ -332,23 +332,25 @@ for(i in 1:nrow(final_names)){
   }
 }
 
-# step_015: the final step!
-step_015 <- tibble()
+```
+
+Each set of name chains has all of the name chains of one length (in this case, from three names/two people to sixteen names/fifteen people); after the first chain, all subsequent chains build off the previous chain!
+
+```{r name_chains_manual}
+
+# final_names <- readRDS(here("data", clean.output))
+
+# chains_00 - some reasonable starting points
+# the people whose last name is also someone else's first name
+chains_00 <- tibble()
 
 for(i in 1:nrow(final_names)){
-  name <- final_names[i,1] %>% as.character()
-  if(name %in% step_014$last){
-    step_015 <- bind_rows(step_015, final_names[i,])
+  name <- final_names[i,2] %>% as.character()
+  if(name %in% final_names$first){
+    chains_00 <- bind_rows(chains_00, final_names[i,])
   }
 }
 
-```
-
-Aaaand finally! Some name chains! 
-
-Each set of name chains has all of the name chains of one length (in this case, from three names to sixteen names); after the first chain, all subsequent chains build off each other!
-
-```{r name_chains_manual}
 
 # chains_01
 chains_01 <- tibble()
@@ -357,11 +359,11 @@ chain <- tibble() %>%
          col_02 = character(),
          col_03 = character())
 
-for(i in 1:nrow(step_001)){
-  for(j in 1:nrow(step_002)){
-    if(step_001[i,2] == step_002[j,1]){
-      chain[1,][1:2] = step_001[i,][1:2]
-      chain[1,3] = step_002[j,2]
+for(i in 1:nrow(chains_00)){
+  for(j in 1:nrow(step_001)){
+    if(chains_00[i,2] == step_001[j,1]){
+      chain[1,][1:2] = chains_00[i,][1:2]
+      chain[1,3] = step_001[j,2]
       
       chains_01 <- rbind(chains_01, chain)
     }
@@ -374,10 +376,10 @@ chain <- chain %>%
   mutate(col_04 = NA_character_)
 
 for(i in 1:nrow(chains_01)){
-  for(j in 1:nrow(step_003)){
-    if(chains_01[i,3] == step_003[j,1]){
+  for(j in 1:nrow(step_002)){
+    if(chains_01[i,3] == step_002[j,1]){
       chain[1,][1:3] = chains_01[i,][1:3]
-      chain[1,4] = step_003[j,2]
+      chain[1,4] = step_002[j,2]
       
       chains_02 <- rbind(chains_02, chain)
     }
@@ -390,10 +392,10 @@ chain <- chain %>%
   mutate(col_05 = NA_character_)
 
 for(i in 1:nrow(chains_02)){
-  for(j in 1:nrow(step_004)){
-    if(chains_02[i,4] == step_004[j,1]){
+  for(j in 1:nrow(step_003)){
+    if(chains_02[i,4] == step_003[j,1]){
       chain[1,][1:4] = chains_02[i,][1:4]
-      chain[1,5] = step_004[j,2]
+      chain[1,5] = step_003[j,2]
       
       chains_03 <- rbind(chains_03, chain)
     }
@@ -406,10 +408,10 @@ chain <- chain %>%
   mutate(col_06 = NA_character_)
 
 for(i in 1:nrow(chains_03)){
-  for(j in 1:nrow(step_005)){
-    if(chains_03[i,5] == step_005[j,1]){
+  for(j in 1:nrow(step_004)){
+    if(chains_03[i,5] == step_004[j,1]){
       chain[1,][1:5] = chains_03[i,][1:5]
-      chain[1,6] = step_005[j,2]
+      chain[1,6] = step_004[j,2]
       
       chains_04 <- rbind(chains_04, chain)
     }
@@ -422,10 +424,10 @@ chain <- chain %>%
   mutate(col_07 = NA_character_)
 
 for(i in 1:nrow(chains_04)){
-  for(j in 1:nrow(step_006)){
-    if(chains_04[i,6] == step_006[j,1]){
+  for(j in 1:nrow(step_005)){
+    if(chains_04[i,6] == step_005[j,1]){
       chain[1,][1:6] = chains_04[i,][1:6]
-      chain[1,7] = step_006[j,2]
+      chain[1,7] = step_005[j,2]
       
       chains_05 <- rbind(chains_05, chain)
     }
@@ -438,10 +440,10 @@ chain <- chain %>%
   mutate(col_08 = NA_character_)
 
 for(i in 1:nrow(chains_05)){
-  for(j in 1:nrow(step_007)){
-    if(chains_05[i,7] == step_007[j,1]){
+  for(j in 1:nrow(step_006)){
+    if(chains_05[i,7] == step_006[j,1]){
       chain[1,][1:7] = chains_05[i,][1:7]
-      chain[1,8] = step_007[j,2]
+      chain[1,8] = step_006[j,2]
       
       chains_06 <- rbind(chains_06, chain)
     }
@@ -454,10 +456,10 @@ chain <- chain %>%
   mutate(col_09 = NA_character_)
 
 for(i in 1:nrow(chains_06)){
-  for(j in 1:nrow(step_008)){
-    if(chains_06[i,8] == step_008[j,1]){
+  for(j in 1:nrow(step_007)){
+    if(chains_06[i,8] == step_007[j,1]){
       chain[1,][1:8] = chains_06[i,][1:8]
-      chain[1,9] = step_008[j,2]
+      chain[1,9] = step_007[j,2]
       
       chains_07 <- rbind(chains_07, chain)
     }
@@ -470,10 +472,10 @@ chain <- chain %>%
   mutate(col10 = NA_character_)
 
 for(i in 1:nrow(chains_07)){
-  for(j in 1:nrow(step_009)){
-    if(chains_07[i,9] == step_009[j,1]){
+  for(j in 1:nrow(step_008)){
+    if(chains_07[i,9] == step_008[j,1]){
       chain[1,][1:9] = chains_07[i,][1:9]
-      chain[1,10] = step_009[j,2]
+      chain[1,10] = step_008[j,2]
       
       chains_08 <- rbind(chains_08, chain)
     }
@@ -486,10 +488,10 @@ chain <- chain %>%
   mutate(col11 = NA_character_)
 
 for(i in 1:nrow(chains_08)){
-  for(j in 1:nrow(step_010)){
-    if(chains_08[i,10] == step_010[j,1]){
+  for(j in 1:nrow(step_009)){
+    if(chains_08[i,10] == step_009[j,1]){
       chain[1,][1:10] = chains_08[i,][1:10]
-      chain[1,11] = step_010[j,2]
+      chain[1,11] = step_009[j,2]
       
       chains_09 <- rbind(chains_09, chain)
     }
@@ -502,10 +504,10 @@ chain <- chain %>%
   mutate(col12 = NA_character_)
 
 for(i in 1:nrow(chains_09)){
-  for(j in 1:nrow(step_011)){
-    if(chains_09[i,11] == step_011[j,1]){
+  for(j in 1:nrow(step_010)){
+    if(chains_09[i,11] == step_010[j,1]){
       chain[1,][1:11] = chains_09[i,][1:11]
-      chain[1,12] = step_011[j,2]
+      chain[1,12] = step_010[j,2]
       
       chains_10 <- rbind(chains_10, chain)
     }
@@ -518,10 +520,10 @@ chain <- chain %>%
   mutate(col13 = NA_character_)
 
 for(i in 1:nrow(chains_10)){
-  for(j in 1:nrow(step_012)){
-    if(chains_10[i,12] == step_012[j,1]){
+  for(j in 1:nrow(step_011)){
+    if(chains_10[i,12] == step_011[j,1]){
       chain[1,][1:12] = chains_10[i,][1:12]
-      chain[1,13] = step_012[j,2]
+      chain[1,13] = step_011[j,2]
       
       chains_11 <- rbind(chains_11, chain)
     }
@@ -534,10 +536,10 @@ chain <- chain %>%
   mutate(col14 = NA_character_)
 
 for(i in 1:nrow(chains_11)){
-  for(j in 1:nrow(step_013)){
-    if(chains_11[i,13] == step_013[j,1]){
+  for(j in 1:nrow(step_012)){
+    if(chains_11[i,13] == step_012[j,1]){
       chain[1,][1:13] = chains_11[i,][1:13]
-      chain[1,14] = step_013[j,2]
+      chain[1,14] = step_012[j,2]
       
       chains_12 <- rbind(chains_12, chain)
     }
@@ -550,10 +552,10 @@ chain <- chain %>%
   mutate(col15 = NA_character_)
 
 for(i in 1:nrow(chains_12)){
-  for(j in 1:nrow(step_014)){
-    if(chains_12[i,14] == step_014[j,1]){
+  for(j in 1:nrow(step_013)){
+    if(chains_12[i,14] == step_013[j,1]){
       chain[1,][1:14] = chains_12[i,][1:14]
-      chain[1,15] = step_014[j,2]
+      chain[1,15] = step_013[j,2]
       
       chains_13 <- rbind(chains_13, chain)
     }
@@ -566,10 +568,10 @@ chain <- chain %>%
   mutate(col16 = NA_character_)
 
 for(i in 1:nrow(chains_13)){
-  for(j in 1:nrow(step_015)){
-    if(chains_13[i,15] == step_015[j,1]){
+  for(j in 1:nrow(step_014)){
+    if(chains_13[i,15] == step_014[j,1]){
       chain[1,][1:15] = chains_13[i,][1:15]
-      chain[1,16] = step_015[j,2]
+      chain[1,16] = step_014[j,2]
       
       chains_14 <- rbind(chains_14, chain)
     }
@@ -592,4 +594,4 @@ saveRDS(name_chains, here("data", final.output))
 ```
 
 Future updates:
-* Adding to the code/name lists without having to re-scrape everything
+* Add to the code/name lists without having to re-scrape everything.
