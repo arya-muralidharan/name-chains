@@ -1,0 +1,343 @@
+---
+title: "NBA Name Chains"
+author: "Arya Muralidharan"
+output: html_notebook
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, tidy = TRUE)
+```
+```{r packages, message = FALSE, warning = FALSE}
+# load packages
+library(here)
+library(rvest)
+library(tidyverse)
+```
+
+# Introduction
+
+This project was inspired by [this tweet](https://twitter.com/travisyost/status/1124420117247381505), which lists some name chains of NHL players. I wanted to create a program that would generate name chains; however, I wanted to test it on a new data set: NBA players. 
+
+The [repository](https://github.com/arya-muralidharan/name-chains) for this project contains:
+
+* Basketball Reference player codes of all NBA/ABA players
+* Full names of all NBA/ABA players
+* Cleaned names of all NBA/ABA players
+  + No duplicates, middle names, or suffixes
+* All name chains (min. two players)
+* A script to update the lists of player codes and player names
+
+Data is up to date as of **2019/07/26**.
+
+<br>
+
+# Data
+
+All data comes from [Basketball Reference](https://www.basketball-reference.com/).
+
+First, scrape all of Basketball Reference's player codes from each "NBA & ABA Players with Last Names Starting with [Letter]" page. 
+
+_Don't scrape the names directly from these pages; they often list a player's nickname, not legal first name._
+
+```{r scrape_codes}
+# main part of the basketball-reference url
+main.url <- "https://www.basketball-reference.com/players/"
+
+# list of letters in the alphabet except for 'x' - there are no NBA players with last names starting with 'x'
+letter.list <- c("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", 
+                 "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "y", "z")
+
+all_codes <- list()
+
+for(letter in letter.list){
+  
+  # read in letter page
+  url_codes <- paste0(main.url, letter, "/")
+  page_codes <- read_html(url_codes)
+  
+  # get player codes
+  codes <- page_codes %>%
+    html_nodes("table#players > tbody > tr > th") %>%
+    html_attr("data-append-csv") %>%
+    as.list()
+  
+  all_codes <- c(all_codes, codes)
+}
+
+# save locally
+saveRDS(all_codes, here("save", "NBA_ABA_codes.rds"))
+```
+
+<br> Then, use the player codes to scrape the name of each player. 
+
+```{r scrape_names}
+# all_codes <- readRDS(here("save", "NBA_ABA_codes.rds"))
+# main.url <- "https://www.basketball-reference.com/players/"
+
+all_names <- list()
+
+for(code in all_codes){
+  
+  letter <- substr(code, 1, 1)
+  
+  url <- paste0(main.url, letter, "/", code, ".html")
+  page <- read_html(url)
+  
+  # get full name
+  # when testing on the 'a' names, I found that there were three (3) different selectors
+  name <- page %>%
+    html_nodes("#meta > div > p:nth-child(2) > strong > strong") %>%
+    html_text()
+  if(identical(name, character(0))){
+    name <- page %>%
+      html_nodes("#meta > div:nth-child(2) > p:nth-child(3) > strong > strong") %>%
+      html_text()
+  }
+  if(identical(name, character(0))){
+    name <- page %>%
+      html_nodes("#meta > div > p:nth-child(3) > strong > strong") %>%
+      html_text()
+  }
+  all_names <- c(all_names, name)
+  
+}
+
+# save locally
+saveRDS(all_names, here("save", "NBA_ABA_full_names.rds"))
+```
+
+<br> Now, clean the names: remove suffixes, middle names, and duplicates.
+
+```{r clean_names}
+# all_names <- readRDS(here("save", "NBA_ABA_full_names.rds"))
+
+# remove suffixes and split into first, middle, last, etc.
+final_names <- all_names %>%
+  str_replace(" Jr.", "") %>%
+  as.list() %>%
+  str_replace(" Sr.", "") %>%
+  as.list() %>%
+  str_replace(" IV", "") %>%
+  as.list() %>%
+  str_replace(" III", "") %>%
+  as.list() %>%
+  str_replace(" II", "") %>%
+  as.list() %>% 
+  str_split(" ")
+
+# turn this into a tibble
+final_names <- final_names %>% 
+  plyr::ldply(rbind) %>% 
+  as_tibble()
+colnames(final_names) <- c("first", "two", "three", "four", "five")
+
+# here's what's happening below:
+# mutate: convert to character & create last name column
+# mutate: fix certain names - manual inspection
+# select: keep only first and last names
+# distinct: remove duplicates
+final_names <- final_names %>%
+  mutate(first = as.character(first),
+         two = as.character(two),
+         three = as.character(three), 
+         four = as.character(four),
+         five = as.character(five),
+         last = case_when(!is.na(five) ~ five,
+                          !is.na(four) ~ four,
+                          !is.na(three) ~ three,
+                          !is.na(two) ~ two)) %>%
+  mutate(first = case_when(last == "Watanabe" & first == "Watanabe" ~ "Yuta",
+                           last == "Navarro" & first == "Juan" ~ "Juan Carlos",
+                           TRUE ~ first),
+         last = case_when(last == "Salle" & first == "George" ~ "Bon Salle",
+                          last == "Colo" & first == "Nando" ~ "De Colo",
+                          last == "Negro" & first == "Vincent" ~ "Del Negro",
+                          last == "Arsdale" & first == "Richard" ~ "Van Arsdale",
+                          last == "Arsdale" & first == "Thomas" ~ "Van Arsdale",
+                          last == "Kolff" & first == "Willem" ~ "van Breda Kolff",
+                          last == "Kolff" & first == "Jan" ~ "van Breda Kolff",
+                          last == "Exel" & first == "Nickey" ~ "Van Exel",
+                          last == "Horn" & first == "Keith" ~ "Van Horn",
+                          last == "Lier" & first == "Norman" ~ "Van Lier",
+                          last == "Zant" & first == "Dennis" ~ "Van Zant",
+                          last == "Velden" & first == "Logan" ~ "Vander Velden",
+                          last == "Peace" & first == "Metta" ~ "World Peace",
+                          TRUE ~ last)) %>%
+  select(first, last) %>%
+  distinct()
+
+# save locally
+saveRDS(final_names, here("save", "NBA_ABA_final_names.rds"))
+```
+
+# Name Chains
+
+<br> First, create the functions needed to produce name chains.
+
+The first function, `relevant_names`, returns a tibble of the first and last names of all people whose first names match the last names of people in the previous tibble, starting with `final_names`. 
+
+_Note: This function isn't strictly necessary, but it speeds up the process of generating chains. It also gives you a better idea of how many sets of chains can be generated._
+
+The second function, `create_chains`, returns a tibble of all chains that can be made with a user-inputted number of people. 
+Each chain set builds off the previous chain set and uses the output of `relevant_names` to search for name matches.
+
+```{r functions}
+# define first function - create tibbles until there are no more relevant names
+relevant_names <- function(this_step, prev_step){
+  for(i in 1:nrow(final_names)){
+    name <- final_names[i,1] %>% as.character()
+    if(name %in% prev_step$last){
+      this_step <- bind_rows(this_step, final_names[i,])
+    }
+  }
+  return(this_step)
+}
+
+# define function - 
+create_chains <- function(this_set, prev_set, step, num){
+  for(i in 1:nrow(prev_set)){
+    for(j in 1:nrow(step)){
+      if(prev_set[i,num] == step[j,1]){
+        chain[1,][1:num] = prev_set[i,][1:num]
+        chain[1,num+1] = step[j,2]
+        
+        this_set <- rbind(this_set, chain)
+      }
+    }
+  }
+  return(this_set)
+}
+```
+
+<br> Build the name chains sets.
+
+```{r name_chain_sets}
+# final_names <- readRDS(here("save", "NBA_ABA_final_names.rds"))
+
+# reasonable starting points: the people whose last name is someone else's first name
+chains_00 <- tibble()
+
+for(i in 1:nrow(final_names)){
+  name <- final_names[i,2] %>% as.character()
+  if(name %in% final_names$first){
+    chains_00 <- bind_rows(chains_00, final_names[i,])
+  }
+}
+
+# temp chain - number of columns 
+chain <- tibble() %>%
+  mutate(col_01 = character(), col_02 = character(), col_03 = character(), col_04 = character(), 
+         col_05 = character(), col_06 = character(), col_07 = character(), col_08 = character(),
+         col_09 = character(), col_10 = character(), col_11 = character(), col_12 = character(),
+         col_13 = character(), col_14 = character(), col_15 = character(), col_16 = character())
+
+
+
+# chains of two people
+step_01 <- tibble() %>% relevant_names(final_names)
+chains_01 <- tibble() %>% create_chains(chains_00, step_01, 2)
+
+# chains of three people
+step_02 <- tibble() %>% relevant_names(step_01)
+chains_02 <- tibble() %>% create_chains(chains_01, step_02, 3)
+
+# chains of four people
+step_03 <- tibble() %>% relevant_names(step_02)
+chains_03 <- tibble() %>% create_chains(chains_02, step_03, 4)
+
+# chains of five people
+step_04 <- tibble() %>% relevant_names(step_03)
+chains_04 <- tibble() %>% create_chains(chains_03, step_04, 5)
+
+# chains of six people
+step_05 <- tibble() %>% relevant_names(step_04)
+chains_05 <- tibble() %>% create_chains(chains_04, step_05, 6)
+
+# chains of seven people
+step_06 <- tibble() %>% relevant_names(step_05)
+chains_06 <- tibble() %>% create_chains(chains_05, step_06, 7)
+
+# chains of eight people
+step_07 <- tibble() %>% relevant_names(step_06)
+chains_07 <- tibble() %>% create_chains(chains_06, step_07, 8)
+
+# chains of nine people
+step_08 <- tibble() %>% relevant_names(step_07)
+chains_08 <- tibble() %>% create_chains(chains_07, step_08, 9)
+
+# chains of ten people
+step_09 <- tibble() %>% relevant_names(step_08)
+chains_09 <- tibble() %>% create_chains(chains_08, step_09, 10)
+
+# chains of eleven people
+step_10 <- tibble() %>% relevant_names(step_09)
+chains_10 <- tibble() %>% create_chains(chains_09, step_10, 11)
+
+# chains of twelve people
+step_11 <- tibble() %>% relevant_names(step_10)
+chains_11 <- tibble() %>% create_chains(chains_10, step_11, 12)
+
+# chains of thirteen people
+step_12 <- tibble() %>% relevant_names(step_11)
+chains_12 <- tibble() %>% create_chains(chains_11, step_12, 13)
+
+# chains of fourteen people
+step_13 <- tibble() %>% relevant_names(step_12)
+chains_13 <- tibble() %>% create_chains(chains_12, step_13, 14)
+
+# chains of fifteen people
+step_14 <- tibble() %>% relevant_names(step_13)
+chains_14 <- tibble() %>% create_chains(chains_13, step_14, 15)
+```
+
+<br> The following chunk removes the `NA` columns from every set of chains.
+
+No need to run it if the only desired output is the complete set of all chains of any length.
+
+```{r tidy_chains}
+chains_01 <- chains_01 %>% select(col_01, col_02, col_03)
+
+chains_02 <- chains_02 %>% select(col_01, col_02, col_03, col_04)
+
+chains_03 <- chains_03 %>% select(col_01, col_02, col_03, col_04, col_05)
+
+chains_04 <- chains_04 %>% select(col_01, col_02, col_03, col_04, col_05, col_06)
+
+chains_05 <- chains_05 %>% select(col_01, col_02, col_03, col_04, col_05, col_06, col_07)
+
+chains_06 <- chains_06 %>% select(col_01, col_02, col_03, col_04, col_05, col_06, col_07, col_08)
+
+chains_07 <- chains_07 %>% select(col_01, col_02, col_03, col_04, col_05, col_06, col_07, col_08, 
+                                  col_09)
+
+chains_08 <- chains_08 %>% select(col_01, col_02, col_03, col_04, col_05, col_06, col_07, col_08, 
+                                  col_09, col_10)
+
+chains_09 <- chains_09 %>% select(col_01, col_02, col_03, col_04, col_05, col_06, col_07, col_08, 
+                                  col_09, col_10, col_11)
+
+chains_10 <- chains_10 %>% select(col_01, col_02, col_03, col_04, col_05, col_06, col_07, col_08, 
+                                  col_09, col_10, col_11, col_12)
+
+chains_11 <- chains_11 %>% select(col_01, col_02, col_03, col_04, col_05, col_06, col_07, col_08, 
+                                  col_09, col_10, col_11, col_12, col_13)
+
+chains_12 <- chains_12 %>% select(col_01, col_02, col_03, col_04, col_05, col_06, col_07, col_08, 
+                                  col_09, col_10, col_11, col_12, col_13, col_14)
+
+chains_13 <- chains_13 %>% select(col_01, col_02, col_03, col_04, col_05, col_06, col_07, col_08, 
+                                  col_09, col_10, col_11, col_12, col_13, col_14, col_15)
+
+chains_14 <- chains_14
+```
+
+<br> The final product: bind all the sets of name chains together!
+
+```{r name_chains}
+# the full list of name chains - bind all the chains tibbles together
+all_name_chains <- list(chains_01, chains_02, chains_03, chains_04, chains_05, chains_06, chains_07,
+                        chains_08, chains_09, chains_10, chains_11, chains_12, chains_13, chains_14) %>% 
+  bind_rows()
+
+# save locally
+saveRDS(all_name_chains, here("save", "NBA_ABA_name_chains.rds"))
+```
