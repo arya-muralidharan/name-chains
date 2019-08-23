@@ -178,7 +178,7 @@ The second function, `create_chains`, returns a tibble of all chains that can be
 Each chain set builds off the previous chain set and uses the output of `relevant_names` to search for name matches.
 
 ```{r functions}
-# define first function - create tibbles until there are no more relevant names
+# define function - create tibbles until there are no more relevant names
 relevant_names <- function(this_step, prev_step){
   for(i in 1:nrow(final_names)){
     name <- final_names[i,1] %>% as.character()
@@ -189,7 +189,7 @@ relevant_names <- function(this_step, prev_step){
   return(this_step)
 }
 
-# define function - 
+# define function - create name chains of a user-defined length
 create_chains <- function(this_set, prev_set, step, num){
   for(i in 1:nrow(prev_set)){
     for(j in 1:nrow(step)){

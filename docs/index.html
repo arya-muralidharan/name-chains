@@ -10,7 +10,6 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Arya Muralidharan" />
 
 
 <title>NBA Name Chains</title>
@@ -179,7 +178,6 @@ summary {
 
 
 <h1 class="title toc-ignore">NBA Name Chains</h1>
-<h4 class="author">Arya Muralidharan</h4>
 
 </div>
 
@@ -328,7 +326,7 @@ saveRDS(final_names, here(&quot;save&quot;, &quot;NBA_ABA_final_names.rds&quot;)
 <p>The first function, <code>relevant_names</code>, returns a tibble of the first and last names of all people whose first names match the last names of people in the previous tibble, starting with <code>final_names</code>.</p>
 <p><em>Note: This function isn’t strictly necessary, but it speeds up the process of generating chains. It also gives you a better idea of how many sets of chains can be generated.</em></p>
 <p>The second function, <code>create_chains</code>, returns a tibble of all chains that can be made with a user-inputted number of people. Each chain set builds off the previous chain set and uses the output of <code>relevant_names</code> to search for name matches.</p>
-<pre class="r"><code># define first function - create tibbles until there are no more relevant names
+<pre class="r"><code># define function - create tibbles until there are no more relevant names
 relevant_names &lt;- function(this_step, prev_step){
   for(i in 1:nrow(final_names)){
     name &lt;- final_names[i,1] %&gt;% as.character()
@@ -339,7 +337,7 @@ relevant_names &lt;- function(this_step, prev_step){
   return(this_step)
 }
 
-# define function - 
+# define function - create name chains of a user-defined length
 create_chains &lt;- function(this_set, prev_set, step, num){
   for(i in 1:nrow(prev_set)){
     for(j in 1:nrow(step)){
