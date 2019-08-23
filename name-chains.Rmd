@@ -27,8 +27,7 @@ The [repository](https://github.com/arya-muralidharan/name-chains) for this proj
 
 * Basketball Reference player codes of all NBA/ABA players
 * Full names of all NBA/ABA players
-* Cleaned names of all NBA/ABA players
-  + No duplicates, middle names, or suffixes
+* Cleaned names of all NBA/ABA players (no duplicates, middle names, or suffixes)
 * All name chains (min. two players)
 * A script to update the lists of player codes and player names
 
