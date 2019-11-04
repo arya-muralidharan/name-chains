@@ -286,7 +286,7 @@ chains_14 <- tibble() %>% create_chains(chains_13, step_14, 15)
 There are two (2) name chains with fifteen people:
 
 ```{r largest_chains, echo = FALSE, eval = TRUE}
-knitr::kable(chains_14, format = "html")
+print(chains_14)
 ```
 
 The final product: bind all the sets of name chains together!
