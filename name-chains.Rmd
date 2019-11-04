@@ -1,10 +1,5 @@
 ---
-title: "NBA Name Chains"
-knit: (function(input_file, encoding) {
-  out_dir <- 'docs';
-  rmarkdown::render(input_file,
-  encoding=encoding,
-  output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
+title: "NBA Name Chains: A Tutorial"
 output: html_document
 ---
 ```{r setup, include=FALSE}
@@ -13,7 +8,7 @@ knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 
 # Introduction
 
-```{r packages, message = FALSE, warning = FALSE, eval = TRUE}
+```{r packages, message = FALSE, warning = FALSE}
 # load packages
 library(here)
 library(rvest)
@@ -291,7 +286,7 @@ chains_14 <- tibble() %>% create_chains(chains_13, step_14, 15)
 There are two (2) name chains with fifteen people:
 
 ```{r largest_chains, echo = FALSE, eval = TRUE}
-knitr::kable(chains_14)
+knitr::kable(chains_14, format = "markdown")
 ```
 
 The final product: bind all the sets of name chains together!
