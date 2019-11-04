@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 
 # Introduction
 
-```{r packages, message = FALSE, warning = FALSE}
+```{r packages, message = FALSE, warning = FALSE, eval = TRUE}
 # load packages
 library(here)
 library(rvest)
@@ -220,7 +220,9 @@ for(i in 1:nrow(final_names)){
   }
 }
 
-# temp chain - number of columns 
+# temp chain - number of columns
+# figure this out by running the relevant_names function
+# until a data frame of zero observations is created
 chain <- tibble() %>%
   mutate(col_01 = character(), col_02 = character(), col_03 = character(), col_04 = character(), 
          col_05 = character(), col_06 = character(), col_07 = character(), col_08 = character(),
@@ -286,45 +288,10 @@ step_14 <- tibble() %>% relevant_names(step_13)
 chains_14 <- tibble() %>% create_chains(chains_13, step_14, 15)
 ```
 
-The following chunk removes the `NA` columns from every set of chains.
+There are two (2) name chains with fifteen people:
 
-No need to run it if the only desired output is the complete set of all chains of any length.
-
-```{r tidy_chains}
-chains_01 <- chains_01 %>% select(col_01, col_02, col_03)
-
-chains_02 <- chains_02 %>% select(col_01, col_02, col_03, col_04)
-
-chains_03 <- chains_03 %>% select(col_01, col_02, col_03, col_04, col_05)
-
-chains_04 <- chains_04 %>% select(col_01, col_02, col_03, col_04, col_05, col_06)
-
-chains_05 <- chains_05 %>% select(col_01, col_02, col_03, col_04, col_05, col_06, col_07)
-
-chains_06 <- chains_06 %>% select(col_01, col_02, col_03, col_04, col_05, col_06, col_07, col_08)
-
-chains_07 <- chains_07 %>% select(col_01, col_02, col_03, col_04, col_05, col_06, col_07, col_08, 
-                                  col_09)
-
-chains_08 <- chains_08 %>% select(col_01, col_02, col_03, col_04, col_05, col_06, col_07, col_08, 
-                                  col_09, col_10)
-
-chains_09 <- chains_09 %>% select(col_01, col_02, col_03, col_04, col_05, col_06, col_07, col_08, 
-                                  col_09, col_10, col_11)
-
-chains_10 <- chains_10 %>% select(col_01, col_02, col_03, col_04, col_05, col_06, col_07, col_08, 
-                                  col_09, col_10, col_11, col_12)
-
-chains_11 <- chains_11 %>% select(col_01, col_02, col_03, col_04, col_05, col_06, col_07, col_08, 
-                                  col_09, col_10, col_11, col_12, col_13)
-
-chains_12 <- chains_12 %>% select(col_01, col_02, col_03, col_04, col_05, col_06, col_07, col_08, 
-                                  col_09, col_10, col_11, col_12, col_13, col_14)
-
-chains_13 <- chains_13 %>% select(col_01, col_02, col_03, col_04, col_05, col_06, col_07, col_08, 
-                                  col_09, col_10, col_11, col_12, col_13, col_14, col_15)
-
-chains_14 <- chains_14
+```{r largest_chains, echo = FALSE, eval = TRUE}
+knitr::kable(chains_14)
 ```
 
 The final product: bind all the sets of name chains together!

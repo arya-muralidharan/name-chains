@@ -431,6 +431,66 @@ chains_13 &lt;- tibble() %&gt;% create_chains(chains_12, step_13, 14)
 step_14 &lt;- tibble() %&gt;% relevant_names(step_13)
 chains_14 &lt;- tibble() %&gt;% create_chains(chains_13, step_14, 15)</code></pre>
 <p>There are two (2) name chains with fifteen people:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">col_01</th>
+<th align="left">col_02</th>
+<th align="left">col_03</th>
+<th align="left">col_04</th>
+<th align="left">col_05</th>
+<th align="left">col_06</th>
+<th align="left">col_07</th>
+<th align="left">col_08</th>
+<th align="left">col_09</th>
+<th align="left">col_10</th>
+<th align="left">col_11</th>
+<th align="left">col_12</th>
+<th align="left">col_13</th>
+<th align="left">col_14</th>
+<th align="left">col_15</th>
+<th align="left">col_16</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Tellis</td>
+<td align="left">Frank</td>
+<td align="left">Brian</td>
+<td align="left">Howard</td>
+<td align="left">Carl</td>
+<td align="left">Henry</td>
+<td align="left">James</td>
+<td align="left">Allen</td>
+<td align="left">Terry</td>
+<td align="left">Thomas</td>
+<td align="left">Brandon</td>
+<td align="left">Paul</td>
+<td align="left">George</td>
+<td align="left">Wilson</td>
+<td align="left">Chandler</td>
+<td align="left">Hutchison</td>
+</tr>
+<tr class="even">
+<td align="left">Tellis</td>
+<td align="left">Frank</td>
+<td align="left">Brian</td>
+<td align="left">Howard</td>
+<td align="left">Carl</td>
+<td align="left">Henry</td>
+<td align="left">James</td>
+<td align="left">Allen</td>
+<td align="left">Terry</td>
+<td align="left">Thomas</td>
+<td align="left">Brandon</td>
+<td align="left">Paul</td>
+<td align="left">George</td>
+<td align="left">Wilson</td>
+<td align="left">Chandler</td>
+<td align="left">Parsons</td>
+</tr>
+</tbody>
+</table>
 <p>The final product: bind all the sets of name chains together!</p>
 <pre class="r"><code># the full list of name chains - bind all the chains tibbles together
 all_name_chains &lt;- list(chains_01, chains_02, chains_03, chains_04, chains_05, chains_06, chains_07,
