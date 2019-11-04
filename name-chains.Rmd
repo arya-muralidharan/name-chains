@@ -3,7 +3,7 @@ title: "NBA Name Chains: A Tutorial"
 output: html_document
 ---
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE, message = FALSE, warning = FALSE)
 ```
 
 # Introduction
@@ -285,8 +285,9 @@ chains_14 <- tibble() %>% create_chains(chains_13, step_14, 15)
 
 There are two (2) name chains with fifteen people:
 
-```{r largest_chains, echo = FALSE, eval = TRUE}
-knitr::kable(chains_14, format = "html")
+```
+## Tellis Frank Brian Howard Carl Henry James Allen Terry Thomas Brandon Paul George Wilson Chandler Hutchinson
+## Tellis Frank Brian Howard Carl Henry James Allen Terry Thomas Brandon Paul George Wilson Chandler Parsons
 ```
 
 The final product: bind all the sets of name chains together!
