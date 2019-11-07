@@ -15,7 +15,7 @@ library(rvest)
 library(tidyverse)
 ```
 
-This project was inspired by [this tweet](https://twitter.com/travisyost/status/1124420117247381505), which lists some name chains of NHL players. I wanted to create a program that would generate name chains; however, I wanted to test it on a new data set: NBA players. 
+This project was inspired by [this tweet](https://twitter.com/travisyost/status/1124420117247381505), which lists some name chains of NHL players. I wanted to create a program that would generate name chains; however, I wanted to test it on a new data set: NBA players. This project is very much still in progress: I am learning new ways of improving it every day!
 
 The [repository](https://github.com/arya-muralidharan/name-chains) for this project contains:
 
@@ -128,6 +128,7 @@ final_names <- final_names %>%
 colnames(final_names) <- c("first", "two", "three", "four", "five")
 
 final_names <- final_names %>%
+  # convert to character & create last name column
   mutate(first = as.character(first),
          two = as.character(two),
          three = as.character(three), 
@@ -136,7 +137,8 @@ final_names <- final_names %>%
          last = case_when(!is.na(five) ~ five,
                           !is.na(four) ~ four,
                           !is.na(three) ~ three,
-                          !is.na(two) ~ two)) %>% # convert to character & create last name column
+                          !is.na(two) ~ two)) %>%
+  # fix certain names - manual inspection
   mutate(first = case_when(last == "Watanabe" & first == "Watanabe" ~ "Yuta",
                            last == "Navarro" & first == "Juan" ~ "Juan Carlos",
                            TRUE ~ first), 
@@ -153,9 +155,11 @@ final_names <- final_names %>%
                           last == "Zant" & first == "Dennis" ~ "Van Zant",
                           last == "Velden" & first == "Logan" ~ "Vander Velden",
                           last == "Peace" & first == "Metta" ~ "World Peace",
-                          TRUE ~ last)) %>% # fix certain names - manual inspection
-  select(first, last) %>% # keep only first and last names
-  distinct() # remove duplicates
+                          TRUE ~ last)) %>% 
+  # keep only first and last names
+  select(first, last) %>% 
+  # remove duplicates
+  distinct() 
 
 # save locally
 saveRDS(final_names, here("save", "NBA_ABA_final_names.rds"))
@@ -163,34 +167,31 @@ saveRDS(final_names, here("save", "NBA_ABA_final_names.rds"))
 
 # Name Chains
 
-First, create the functions needed to produce name chains.
+First, create the function needed to produce name chains.
 
-The first function, `relevant_names`, returns a tibble of the first and last names of all people whose first names match the last names of people in the previous tibble, starting with `final_names`. 
+```
+This function creates a set of name chains of a user-inputted length.
 
-_Note: This function isn't strictly necessary, but it speeds up the process of generating chains. It also gives you a better idea of how many sets of chains can be generated._
 
-The second function, `create_chains`, returns a tibble of all chains that can be made with a user-inputted number of people. 
-Each chain set builds off the previous chain set and uses the output of `relevant_names` to search for name matches.
+Inputs:
+  prev_set: (tbl) the previous set of name chains (contains one fewer name)
+  names: (tbl) the list of names to search through
+  num: (int) the number of first-last name pairs (i.e. the number of people)
+```
 
 ```{r functions}
-# define function - create tibbles until there are no more relevant names
-relevant_names <- function(this_step, prev_step){
-  for(i in 1:nrow(final_names)){
-    name <- final_names[i,1] %>% as.character()
-    if(name %in% prev_step$last){
-      this_step <- bind_rows(this_step, final_names[i,])
-    }
-  }
-  return(this_step)
-}
+create_chains <- function(prev_set, names, num){
+  
 
-# define function - create name chains of a user-defined length
-create_chains <- function(this_set, prev_set, step, num){
+  this_set = tibble()
+  chain = as_tibble(matrix(ncol = num + 1, 
+                           dimnames = list(NULL, paste0("col", seq_len(num + 1)))))
+  
   for(i in 1:nrow(prev_set)){
-    for(j in 1:nrow(step)){
-      if(prev_set[i,num] == step[j,1]){
+    for(j in 1:nrow(names)){
+      if(prev_set[i,num] == names[j,1]){
         chain[1,][1:num] = prev_set[i,][1:num]
-        chain[1,num+1] = step[j,2]
+        chain[1,num+1] = names[j,2]
         
         this_set <- rbind(this_set, chain)
       }
@@ -207,80 +208,70 @@ Now, build the name chains sets.
 
 # reasonable starting points: the people whose last name is someone else's first name
 chains_00 <- tibble()
-
 for(i in 1:nrow(final_names)){
-  name <- final_names[i,2] %>% as.character()
-  if(name %in% final_names$first){
+  if(final_names[i,2] %in% final_names$first){
     chains_00 <- bind_rows(chains_00, final_names[i,])
   }
 }
 
-# temp chain - number of columns
-# figure this out by running the relevant_names function
-# until a data frame of zero observations is created
-chain <- tibble() %>%
-  mutate(col_01 = character(), col_02 = character(), col_03 = character(), col_04 = character(), 
-         col_05 = character(), col_06 = character(), col_07 = character(), col_08 = character(),
-         col_09 = character(), col_10 = character(), col_11 = character(), col_12 = character(),
-         col_13 = character(), col_14 = character(), col_15 = character(), col_16 = character())
-
-
-
 # chains of two people
-step_01 <- tibble() %>% relevant_names(final_names)
-chains_01 <- tibble() %>% create_chains(chains_00, step_01, 2)
+step_01 <- final_names %>% filter(first %in% last) # here, we shorten the process slightly
+                                                   # by only searching through the people
+                                                   # whose first name
+                                                   # is someone else's last name
+chains_01 <- create_chains(chains_00, step_01, 2)
 
 # chains of three people
-step_02 <- tibble() %>% relevant_names(step_01)
-chains_02 <- tibble() %>% create_chains(chains_01, step_02, 3)
+step_02 <- final_names %>% filter(first %in% step_01$last)
+chains_02 <- create_chains(chains_01, step_02, 3)
 
 # chains of four people
-step_03 <- tibble() %>% relevant_names(step_02)
-chains_03 <- tibble() %>% create_chains(chains_02, step_03, 4)
+step_03 <- final_names %>% filter(first %in% step_02$last)
+chains_03 <- create_chains(chains_02, step_03, 4)
 
 # chains of five people
-step_04 <- tibble() %>% relevant_names(step_03)
-chains_04 <- tibble() %>% create_chains(chains_03, step_04, 5)
+step_04 <- final_names %>% filter(first %in% step_03$last)
+chains_04 <- create_chains(chains_03, step_04, 5)
 
 # chains of six people
-step_05 <- tibble() %>% relevant_names(step_04)
-chains_05 <- tibble() %>% create_chains(chains_04, step_05, 6)
+step_05 <- final_names %>% filter(first %in% step_04$last)
+chains_05 <- create_chains(chains_04, step_05, 6)
 
 # chains of seven people
-step_06 <- tibble() %>% relevant_names(step_05)
-chains_06 <- tibble() %>% create_chains(chains_05, step_06, 7)
+step_06 <- final_names %>% filter(first %in% step_05$last)
+chains_06 <- create_chains(chains_05, step_06, 7)
 
 # chains of eight people
-step_07 <- tibble() %>% relevant_names(step_06)
-chains_07 <- tibble() %>% create_chains(chains_06, step_07, 8)
+step_07 <- final_names %>% filter(first %in% step_06$last)
+chains_07 <- create_chains(chains_06, step_07, 8)
 
 # chains of nine people
-step_08 <- tibble() %>% relevant_names(step_07)
-chains_08 <- tibble() %>% create_chains(chains_07, step_08, 9)
+step_08 <- final_names %>% filter(first %in% step_07$last)
+chains_08 <- create_chains(chains_07, step_08, 9)
 
 # chains of ten people
-step_09 <- tibble() %>% relevant_names(step_08)
-chains_09 <- tibble() %>% create_chains(chains_08, step_09, 10)
+step_09 <- final_names %>% filter(first %in% step_08$last)
+chains_09 <- create_chains(chains_08, step_09, 10)
 
 # chains of eleven people
-step_10 <- tibble() %>% relevant_names(step_09)
-chains_10 <- tibble() %>% create_chains(chains_09, step_10, 11)
+step_10 <- final_names %>% filter(first %in% step_09$last)
+chains_10 <- create_chains(chains_09, step_10, 11)
 
 # chains of twelve people
-step_11 <- tibble() %>% relevant_names(step_10)
-chains_11 <- tibble() %>% create_chains(chains_10, step_11, 12)
+step_11 <- final_names %>% filter(first %in% step_10$last)
+chains_11 <- create_chains(chains_10, step_11, 12)
 
 # chains of thirteen people
-step_12 <- tibble() %>% relevant_names(step_11)
-chains_12 <- tibble() %>% create_chains(chains_11, step_12, 13)
+step_12 <- final_names %>% filter(first %in% step_11$last)
+chains_12 <- create_chains(chains_11, step_12, 13)
 
 # chains of fourteen people
-step_13 <- tibble() %>% relevant_names(step_12)
-chains_13 <- tibble() %>% create_chains(chains_12, step_13, 14)
+step_13 <- final_names %>% filter(first %in% step_12$last)
+chains_13 <- create_chains(chains_12, step_13, 14)
 
 # chains of fifteen people
-step_14 <- tibble() %>% relevant_names(step_13)
-chains_14 <- tibble() %>% create_chains(chains_13, step_14, 15)
+step_14 <- final_names %>% filter(first %in% step_13$last) # final step!
+chains_14 <- create_chains(chains_13, step_14, 15)
 ```
 
 There are two (2) name chains with fifteen people:
