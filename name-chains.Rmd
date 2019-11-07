@@ -172,11 +172,12 @@ First, create the function needed to produce name chains.
 ```
 This function creates a set of name chains of a user-inputted length.
 
-
 Inputs:
   prev_set: (tbl) the previous set of name chains (contains one fewer name)
   names: (tbl) the list of names to search through
   num: (int) the number of first-last name pairs (i.e. the number of people)
+Returns:
+  A tibble of name chains
 ```
 
 ```{r functions}

@@ -329,11 +329,12 @@ saveRDS(final_names, here(&quot;save&quot;, &quot;NBA_ABA_final_names.rds&quot;)
 <p>First, create the function needed to produce name chains.</p>
 <pre><code>This function creates a set of name chains of a user-inputted length.
 
-
 Inputs:
   prev_set: (tbl) the previous set of name chains (contains one fewer name)
   names: (tbl) the list of names to search through
-  num: (int) the number of first-last name pairs (i.e. the number of people)</code></pre>
+  num: (int) the number of first-last name pairs (i.e. the number of people)
+Returns:
+  A tibble of name chains</code></pre>
 <pre class="r"><code>create_chains &lt;- function(prev_set, names, num){
   
 
